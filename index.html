@@ -3,7 +3,7 @@
 <head>
 <!--
   Bien-être & Liberté© — Compagnon Santé
-  v2 — 17/09/2026 — Validé par Bernard : EN ATTENTE
+  v3 — 18/09/2026 — Validé par Bernard : EN ATTENTE
   Cumule (avant migration GitHub du 05/09, une seule étiquette "v1" avait
   regroupé tout ce qui suit, ce qui prêtait à confusion avec une v1.2 restée
   en mémoire — clarifié ici avec un historique complet et une seule version
@@ -24,9 +24,15 @@
       vivante partagée avec gestion-aliments-ig et recettes-igbas) — les
       mises à jour d'IG faites par Bernard ou Marie-Laure apparaissent
       désormais ici automatiquement
-  Fichiers precedents : v1.2.0 (02/09/2026), v1.3.0 (03/09/2026), v1 GitHub (05/09/2026)
+    - v3 (18/09/2026) : ajout d'une 5ème tuile "Recettes" — même principe que
+      les aliments, une nouvelle Function (/api/recettes) va chercher en
+      direct le catalogue de recettes-igbas (/api/data). Recherche, filtre
+      par catégorie et fiche détail (photo, ingrédients avec IG, étapes,
+      remarque) directement dans Compagnon, sans notion de code confidentiel
+      pour l'instant (accès resté libre, comme les autres tuiles)
+  Fichiers precedents : v1.2.0 (02/09/2026), v1.3.0 (03/09/2026), v1 GitHub (05/09/2026), v2 (17/09/2026)
 -->
-<meta name="app-version" content="v2-2026-09-17">
+<meta name="app-version" content="v3-2026-09-18">
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -95,6 +101,8 @@ html,body{font-family:'Outfit',sans-serif;background:var(--gris);color:var(--tex
 .tuile-cs.ig{border-color:var(--vert-bel);}
 .tuile-cs.stress{border-color:var(--or);}
 .tuile-cs.fiches{border-color:var(--teal);}
+.tuile-cs.recettes{border-color:#B5502F;}
+.tuile-cs.recettes .tuile-cs-icone{background:#fbeae4;}
 .tuile-cs-icone{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;}
 .tuile-cs.imc .tuile-cs-icone{background:#e8f6fc;}
 .tuile-cs.ig .tuile-cs-icone{background:#eef9e6;}
@@ -114,6 +122,29 @@ html,body{font-family:'Outfit',sans-serif;background:var(--gris);color:var(--tex
 .cp-card.ig h3{color:var(--vert-bel);}
 .cp-card.stress h3{color:var(--or);}
 .cp-card.fiches h3{color:var(--teal);}
+.cp-card.recettes h3{color:#B5502F;}
+
+/* RECETTES */
+.rec-search{width:100%;border:2px solid var(--gris2);border-radius:12px;padding:11px 16px;font-size:18px;font-family:'Outfit',sans-serif;color:var(--text);background:#fafbfc;margin-bottom:12px;transition:border 0.2s;}
+.rec-search:focus{outline:none;border-color:#B5502F;}
+.rec-cats{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px;}
+.rec-cat-btn{border:2px solid var(--gris2);background:#fff;border-radius:20px;padding:9px 16px;font-size:16px;font-weight:600;cursor:pointer;font-family:'Outfit',sans-serif;color:var(--text2);}
+.rec-cat-btn.active{background:#fbeae4;border-color:#B5502F;color:#B5502F;}
+.rec-liste{display:flex;flex-direction:column;gap:12px;}
+.rec-card{background:#fff;border:2px solid var(--gris2);border-radius:14px;padding:14px 16px;cursor:pointer;transition:border 0.15s;}
+.rec-card:hover{border-color:#B5502F;}
+.rec-card-titre{font-size:18px;font-weight:700;color:var(--text);margin-bottom:6px;}
+.rec-card-meta{font-size:15px;color:var(--text2);display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.rec-detail-back{background:none;border:none;color:#B5502F;font-family:'Outfit',sans-serif;font-weight:700;font-size:17px;cursor:pointer;margin-bottom:14px;padding:0;}
+.rec-detail-photo{width:100%;max-height:220px;object-fit:cover;border-radius:14px;margin-bottom:14px;}
+.rec-detail-titre{font-size:22px;font-weight:700;color:var(--text);margin-bottom:6px;}
+.rec-detail-meta{font-size:16px;color:var(--text2);margin-bottom:16px;}
+.rec-ing-list{list-style:none;padding:0;margin:0 0 20px;}
+.rec-ing-list li{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--gris2);font-size:17px;}
+.rec-etapes{padding:0;margin:0;list-style:none;}
+.rec-etapes li{display:flex;gap:10px;margin-bottom:14px;font-size:17px;line-height:1.65;}
+.rec-etape-num{flex:0 0 auto;width:26px;height:26px;border-radius:50%;background:#B5502F;color:#fff;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;margin-top:2px;}
+.rec-remarque{font-size:16px;color:var(--text2);font-style:italic;margin-top:14px;line-height:1.6;}
 .cp-sub{font-size:18px;color:var(--text2);margin-bottom:18px;line-height:1.6;}
 
 /* ALERTE IG — règle 6 mois */
@@ -291,6 +322,12 @@ input:focus,select:focus{outline:none;border-color:var(--teal);}
       <div class="tuile-cs-desc">Nerf Vague, Stress, Alimentation...</div>
       <div class="tuile-cs-gratuit">Enrichies r&eacute;guli&egrave;rement ✓</div>
     </a>
+    <a class="tuile-cs recettes" href="#" onclick="openPanel('recettes');return false;">
+      <div class="tuile-cs-icone">📖</div>
+      <div class="tuile-cs-titre">Recettes</div>
+      <div class="tuile-cs-desc">IG Bas, par Marie-Laure</div>
+      <div class="tuile-cs-gratuit">Gratuit ✓</div>
+    </a>
   </div>
 
   <div class="compagnon-panels">
@@ -417,6 +454,23 @@ input:focus,select:focus{outline:none;border-color:var(--teal);}
       </div>
     </div>
 
+    <!-- RECETTES -->
+    <div class="cp" id="cp-recettes">
+      <div class="cp-card recettes">
+        <h3>📖 Recettes</h3>
+        <div class="cp-sub">Toutes les recettes IG Bas de Marie-Laure &mdash; la m&ecirc;me base que le site, mise &agrave; jour en direct.</div>
+        <div id="rec-vue-liste">
+          <input class="rec-search" type="text" id="rec-search" placeholder="🔍 Rechercher une recette..." oninput="renderRecettes()">
+          <div class="rec-cats" id="rec-cats"></div>
+          <div class="rec-liste" id="rec-liste"></div>
+        </div>
+        <div id="rec-vue-detail" style="display:none;">
+          <button class="rec-detail-back" onclick="fermerDetailRecette()">← Retour aux recettes</button>
+          <div id="rec-detail-contenu"></div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -445,7 +499,7 @@ input:focus,select:focus{outline:none;border-color:var(--teal);}
   <a href="https://quiz-igbas.pages.dev">Quiz gratuit</a> &nbsp;&middot;&nbsp;
   <a href="https://igbas-clients.pages.dev">Espace Client</a>
   <div class="footer-legal">M&eacute;thode 3+1 &agrave; IGBas&reg; &mdash; Bien-&ecirc;tre &amp; Libert&eacute;&copy; &mdash; v1.3.0 &mdash; 03/09/2026</div>
-  <div style="font-size:12px;color:#8a9088;margin-top:8px;">compagnon-sante — v2 — 17/09/2026 — Validé par Bernard : EN ATTENTE</div>
+  <div style="font-size:12px;color:#8a9088;margin-top:8px;">compagnon-sante — v3 — 18/09/2026 — Validé par Bernard : EN ATTENTE</div>
 </div>
 
 <script>
@@ -465,6 +519,7 @@ function openPanel(id){
   setTimeout(()=>panel.scrollIntoView({behavior:'smooth',block:'start'}),100);
   if(id==='fiches') renderFiches();
   if(id==='ig'){renderIG();}
+  if(id==='recettes'){ fermerDetailRecette(); renderRecettes(); }
 }
 
 // ── IMC ──
@@ -678,6 +733,130 @@ function toggleFiche(id){
   document.querySelectorAll('.fiche-body').forEach(x=>x.classList.remove('open'));
   document.querySelectorAll('.fiche-arr').forEach(x=>x.textContent='▼');
   if(!open){b.classList.add('open');a.textContent='▲';}
+}
+
+// ── RECETTES ──
+// Même principe que pour les aliments : rien n'est stocké ici, tout est
+// chargé en direct depuis recettes-igbas via /api/recettes (une Function de
+// cette appli qui relaie côté serveur la base vivante de recettes-igbas).
+var RECETTES_FULL = [];
+var recettesChargees = false;
+var recCatActive = 'Toutes';
+
+fetch('/api/recettes', {cache:'no-store'})
+  .then(function(r){
+    if(!r.ok) throw new Error('Réponse HTTP ' + r.status);
+    return r.json();
+  })
+  .then(function(data){
+    RECETTES_FULL = (data && Array.isArray(data.recettes)) ? data.recettes : [];
+    recettesChargees = true;
+    if(panelOuvert === 'recettes'){ renderRecettes(); }
+  })
+  .catch(function(err){
+    var cont = document.getElementById('rec-liste');
+    if(cont){
+      cont.innerHTML = '<div style="padding:16px;text-align:center;color:#c0392b;font-size:15px;">Impossible de charger les recettes pour le moment. Réessayez un peu plus tard.</div>';
+    }
+  });
+
+function igMoyenRecette(ingredients){
+  if(!ingredients || !ingredients.length) return 0;
+  var somme = ingredients.reduce(function(s,i){ return s + (i.ig||0); }, 0);
+  return Math.round(somme / ingredients.length);
+}
+
+function igClsRec(ig){
+  if(ig<=35) return 'ig-b';
+  if(ig<=55) return 'ig-m';
+  if(ig<=70) return 'ig-e';
+  return 'ig-t';
+}
+
+function escapeHtmlRec(s){
+  var div = document.createElement('div');
+  div.textContent = s || '';
+  return div.innerHTML;
+}
+
+function setRecCat(cat){
+  recCatActive = cat;
+  renderRecettes();
+}
+
+function renderRecettes(){
+  var contListe = document.getElementById('rec-liste');
+  var contCats = document.getElementById('rec-cats');
+  if(!contListe) return;
+
+  if(!recettesChargees){
+    contListe.innerHTML = '<div style="padding:16px;text-align:center;color:#aaa;font-size:15px;">Chargement des recettes…</div>';
+    if(contCats){ contCats.innerHTML = ''; }
+    return;
+  }
+
+  var q = (document.getElementById('rec-search')||{value:''}).value.toLowerCase().trim();
+  var categories = ['Toutes','Petits Déjeuners','Entrées','Accompagnements','Plats','Desserts'];
+  var base = q ? RECETTES_FULL.filter(function(r){ return (r.titre||'').toLowerCase().indexOf(q) >= 0; }) : RECETTES_FULL;
+
+  if(contCats){
+    contCats.innerHTML = categories.map(function(c){
+      var n = c === 'Toutes' ? base.length : base.filter(function(r){ return r.categorie === c; }).length;
+      return '<button class="rec-cat-btn' + (c===recCatActive?' active':'') + '" onclick="setRecCat(\'' + c.replace(/'/g,"\\'") + '\')">' + c + ' (' + n + ')</button>';
+    }).join('');
+  }
+
+  var liste = base
+    .filter(function(r){ return recCatActive === 'Toutes' || r.categorie === recCatActive; })
+    .slice()
+    .sort(function(a,b){ return (a.titre||'').localeCompare(b.titre||'', 'fr'); });
+
+  if(!liste.length){
+    contListe.innerHTML = '<div style="padding:16px;text-align:center;color:#aaa;font-size:15px;">Aucune recette trouv\u00e9e.</div>';
+    return;
+  }
+
+  contListe.innerHTML = liste.map(function(r){
+    var ig = igMoyenRecette(r.ingredients);
+    return '<div class="rec-card" onclick="ouvrirDetailRecette(\'' + r.id + '\')">'
+      + '<div class="rec-card-titre">' + escapeHtmlRec(r.titre) + '</div>'
+      + '<div class="rec-card-meta">'
+      + '<span>' + escapeHtmlRec(r.categorie||'') + '</span>'
+      + (r.personnes ? '<span>' + escapeHtmlRec(r.personnes) + ' pers.</span>' : '')
+      + '<span class="' + igClsRec(ig) + '" style="border-radius:10px;padding:2px 9px;font-size:14px;font-weight:700;">IG ' + ig + '</span>'
+      + '</div></div>';
+  }).join('');
+}
+
+function ouvrirDetailRecette(id){
+  var r = RECETTES_FULL.find(function(x){ return x.id === id; });
+  if(!r) return;
+  var ig = igMoyenRecette(r.ingredients);
+  var html = '';
+  if(r.photo){ html += '<img class="rec-detail-photo" src="' + r.photo + '">'; }
+  html += '<div class="rec-detail-titre">' + escapeHtmlRec(r.titre) + '</div>';
+  html += '<div class="rec-detail-meta">' + escapeHtmlRec(r.categorie||'') + (r.sousCategorie ? ' · ' + escapeHtmlRec(r.sousCategorie) : '') + ' · ' + escapeHtmlRec(r.personnes||'') + ' pers. · ' + escapeHtmlRec(r.temps||'') + '</div>';
+  html += '<div class="' + igClsRec(ig) + '" style="display:inline-block;border-radius:10px;padding:6px 14px;font-size:16px;font-weight:700;margin-bottom:18px;">IG moyen ' + ig + '</div>';
+  html += '<div style="font-size:16px;font-weight:700;margin-bottom:8px;">Ingr\u00e9dients</div>';
+  html += '<ul class="rec-ing-list">' + (r.ingredients||[]).map(function(i){
+    return '<li><span>' + escapeHtmlRec(i.qty||'') + ' ' + escapeHtmlRec(i.nom) + (i.detail ? ' (' + escapeHtmlRec(i.detail) + ')' : '') + '</span><span class="' + igClsRec(i.ig) + '" style="border-radius:8px;padding:2px 8px;font-size:14px;font-weight:700;">' + i.ig + '</span></li>';
+  }).join('') + '</ul>';
+  html += '<div style="font-size:16px;font-weight:700;margin-bottom:8px;">\u00c9tapes</div>';
+  html += '<ul class="rec-etapes">' + (r.etapes||[]).map(function(e,idx){
+    return '<li><div class="rec-etape-num">' + (idx+1) + '</div><div>' + escapeHtmlRec(e) + '</div></li>';
+  }).join('') + '</ul>';
+  if(r.remarque){ html += '<div class="rec-remarque">' + escapeHtmlRec(r.remarque) + '</div>'; }
+
+  document.getElementById('rec-detail-contenu').innerHTML = html;
+  document.getElementById('rec-vue-liste').style.display = 'none';
+  document.getElementById('rec-vue-detail').style.display = 'block';
+}
+
+function fermerDetailRecette(){
+  var vd = document.getElementById('rec-vue-detail');
+  var vl = document.getElementById('rec-vue-liste');
+  if(vd){ vd.style.display = 'none'; }
+  if(vl){ vl.style.display = 'block'; }
 }
 </script>
 </body>
