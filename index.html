@@ -1,29 +1,32 @@
 <!DOCTYPE html>
-<!--
-  Bien-être & Liberté© — Compagnon Santé
-  v1.2.0 — 02/09/2026
-  Changelog v1.2.0 :
-    - Structure HTML complète (DOCTYPE, <html lang="fr">, head/body) pour accessibilité et validité
-    - Police remplacée : Roboto → Outfit (conforme charte typo IGBas)
-    - Tous les boutons/labels remontés à ≥18px (conforme charte, ex-17px/16px/15px/13px)
-    - Textes secondaires (sous-titres, alertes, aide) remontés vers 16-18px
-    - Cibles tactiles agrandies sur les filtres IG et les réponses du quiz stress
-    - aria-live ajouté sur les zones de résultat (IMC, IG, Stress) pour lecteurs d'écran
-    - Phrase de positionnement ajoutée sous le titre "Compagnon Santé" (à valider/ajuster)
-    v1.3.0 — 03/09/2026 :
-    - Bloc "Comment ça marche ?" ajouté avant les outils, pour rassurer les visiteurs peu à l'aise avec le numérique
-    - _redirects ajouté : methode-igbas.pages.dev redirige désormais vers app.methode-igbas.fr
-    - Derniers textes secondaires (alertes, badges, filtres IG, footer) remontés au plus près de 18px
--->
 <html lang="fr">
 <head>
 <!--
-  VERSION : v1 - 05/09/2026
-  Cumule :
-    - v1 : reprise à l'identique du contenu existant, migration vers dépôt GitHub pour suivi de versions
-  Fichiers precedents : aucun suivi (première version versionnée).
+  Bien-être & Liberté© — Compagnon Santé
+  v2 — 17/09/2026 — Validé par Bernard : EN ATTENTE
+  Cumule (avant migration GitHub du 05/09, une seule étiquette "v1" avait
+  regroupé tout ce qui suit, ce qui prêtait à confusion avec une v1.2 restée
+  en mémoire — clarifié ici avec un historique complet et une seule version
+  affichée désormais) :
+    - v1.2.0 (02/09/2026) : structure HTML complète (DOCTYPE, accessibilité) ;
+      police Roboto → Outfit (charte IGBas) ; boutons/labels remontés à ≥18px ;
+      textes secondaires remontés à 16-18px ; cibles tactiles agrandies (filtres
+      IG, quiz stress) ; aria-live sur les résultats (IMC, IG, Stress) ; phrase
+      de positionnement ajoutée sous le titre
+    - v1.3.0 (03/09/2026) : bloc "Comment ça marche ?" ajouté ; _redirects
+      (methode-igbas.pages.dev → app.methode-igbas.fr) ; derniers textes
+      secondaires remontés à 18px
+    - v1 GitHub (05/09/2026) : migration vers dépôt GitHub pour suivi de
+      versions fiable, contenu repris à l'identique (v1.3.0)
+    - v2 (17/09/2026) : la liste des 414 aliments codée en dur est remplacée
+      par un chargement en direct depuis /api/aliments (nouvelle Cloudflare
+      Pages Function de cette appli, qui va elle-même chercher la base
+      vivante partagée avec gestion-aliments-ig et recettes-igbas) — les
+      mises à jour d'IG faites par Bernard ou Marie-Laure apparaissent
+      désormais ici automatiquement
+  Fichiers precedents : v1.2.0 (02/09/2026), v1.3.0 (03/09/2026), v1 GitHub (05/09/2026)
 -->
-<meta name="app-version" content="v1-2026-09-05">
+<meta name="app-version" content="v2-2026-09-17">
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -442,7 +445,7 @@ input:focus,select:focus{outline:none;border-color:var(--teal);}
   <a href="https://quiz-igbas.pages.dev">Quiz gratuit</a> &nbsp;&middot;&nbsp;
   <a href="https://igbas-clients.pages.dev">Espace Client</a>
   <div class="footer-legal">M&eacute;thode 3+1 &agrave; IGBas&reg; &mdash; Bien-&ecirc;tre &amp; Libert&eacute;&copy; &mdash; v1.3.0 &mdash; 03/09/2026</div>
-  <div style="font-size:12px;color:#8a9088;margin-top:8px;">compagnon-sante — v1 — 05/09/2026 — Validé par Bernard : EN ATTENTE</div>
+  <div style="font-size:12px;color:#8a9088;margin-top:8px;">compagnon-sante — v2 — 17/09/2026 — Validé par Bernard : EN ATTENTE</div>
 </div>
 
 <script>
@@ -497,7 +500,38 @@ function calcIMC(){
 }
 
 // ── ALIMENTS ──
-var ALIMENTS_FULL=[
+// v2 — la liste n'est plus codée en dur ici : elle est chargée en direct
+// depuis /api/aliments (une Cloudflare Pages Function de cette appli qui va
+// elle-même chercher la base vivante partagée avec gestion-aliments-ig et
+// recettes-igbas). Ainsi, toute mise à jour faite par Bernard ou Marie-Laure
+// dans gestion-aliments-ig apparaît ici automatiquement, sans redéploiement.
+var ALIMENTS_FULL=[];
+var alimentsCharges=false;
+
+fetch('/api/aliments', {cache:'no-store'})
+  .then(function(r){
+    if(!r.ok) throw new Error('Réponse HTTP ' + r.status);
+    return r.json();
+  })
+  .then(function(data){
+    if(!Array.isArray(data)) throw new Error('Format inattendu.');
+    ALIMENTS_FULL = data
+      .filter(function(a){ return a && typeof a.nom === 'string'; })
+      .map(function(a){ return [a.nom, (typeof a.ig === 'number' && !isNaN(a.ig)) ? a.ig : 0]; });
+    alimentsCharges = true;
+    if(panelOuvert === 'ig'){ renderIG(); }
+  })
+  .catch(function(err){
+    var cont = document.getElementById('al-liste');
+    if(cont){
+      cont.innerHTML = '<div style="padding:16px;text-align:center;color:#c0392b;font-size:15px;">Impossible de charger la liste des aliments pour le moment. Réessayez un peu plus tard.</div>';
+    }
+    var stats = document.getElementById('ig-stats');
+    if(stats){ stats.textContent = ''; }
+  });
+
+/* ANCIENNE LISTE (conservée en commentaire pour mémoire, plus utilisée) :
+var ALIMENTS_FULL_ANCIEN=[
 [" feta, chèvre, gouda, parmesan)***",0],
 ["Abricot au sirop (boite)",60],
 ["Abricot Pays",40],
@@ -913,6 +947,8 @@ var ALIMENTS_FULL=[
 ["Volaille*** (poulet, dinde, pintade... etc.)",0],
 ["Yaourt, yoghourt, yogourt (nature)**",35]
 ];
+*/
+
 var igFiltreActif='all', alSel=null;
 
 function igCls(ig){
@@ -931,6 +967,13 @@ function setFiltreIG(el,f){
 }
 
 function renderIG(){
+  if(!alimentsCharges){
+    var cont0=document.getElementById('al-liste');
+    if(cont0){ cont0.innerHTML='<div style="padding:16px;text-align:center;color:#aaa;font-size:15px;">Chargement des aliments…</div>'; }
+    var stats0=document.getElementById('ig-stats');
+    if(stats0){ stats0.textContent=''; }
+    return;
+  }
   var q=(document.getElementById('ig-search')||{value:''}).value.toLowerCase().trim();
   var liste=ALIMENTS_FULL.filter(function(a){
     var nom=a[0].toLowerCase();
