@@ -3,7 +3,7 @@
 <head>
 <!--
   Bien-être & Liberté© — Compagnon Santé
-  v3 — 18/09/2026 — Validé par Bernard : EN ATTENTE
+  v4 — 18/09/2026 — Validé par Bernard B
   Cumule (avant migration GitHub du 05/09, une seule étiquette "v1" avait
   regroupé tout ce qui suit, ce qui prêtait à confusion avec une v1.2 restée
   en mémoire — clarifié ici avec un historique complet et une seule version
@@ -30,9 +30,15 @@
       par catégorie et fiche détail (photo, ingrédients avec IG, étapes,
       remarque) directement dans Compagnon, sans notion de code confidentiel
       pour l'instant (accès resté libre, comme les autres tuiles)
-  Fichiers precedents : v1.2.0 (02/09/2026), v1.3.0 (03/09/2026), v1 GitHub (05/09/2026), v2 (17/09/2026)
+    - v4 (18/09/2026) : la liste des rubriques (catégories) n'est plus figée
+      à 5 — elle se recalcule à partir des vraies recettes, donc une nouvelle
+      rubrique créée dans recettes-igbas (ex. "Encas") apparaît ici sans
+      modification du code ; ajout de l'affichage par sous-rubrique quand
+      une rubrique précise en contient plusieurs (même logique que le
+      catalogue de recettes-igbas)
+  Fichiers precedents : v1.2.0 (02/09/2026), v1.3.0 (03/09/2026), v1 GitHub (05/09/2026), v2 (17/09/2026), v3 (18/09/2026)
 -->
-<meta name="app-version" content="v3-2026-09-18">
+<meta name="app-version" content="v4-2026-09-18">
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -462,6 +468,7 @@ input:focus,select:focus{outline:none;border-color:var(--teal);}
         <div id="rec-vue-liste">
           <input class="rec-search" type="text" id="rec-search" placeholder="🔍 Rechercher une recette..." oninput="renderRecettes()">
           <div class="rec-cats" id="rec-cats"></div>
+          <div class="rec-cats" id="rec-souscats"></div>
           <div class="rec-liste" id="rec-liste"></div>
         </div>
         <div id="rec-vue-detail" style="display:none;">
@@ -499,7 +506,7 @@ input:focus,select:focus{outline:none;border-color:var(--teal);}
   <a href="https://quiz-igbas.pages.dev">Quiz gratuit</a> &nbsp;&middot;&nbsp;
   <a href="https://igbas-clients.pages.dev">Espace Client</a>
   <div class="footer-legal">M&eacute;thode 3+1 &agrave; IGBas&reg; &mdash; Bien-&ecirc;tre &amp; Libert&eacute;&copy; &mdash; v1.3.0 &mdash; 03/09/2026</div>
-  <div style="font-size:12px;color:#8a9088;margin-top:8px;">compagnon-sante — v3 — 18/09/2026 — Validé par Bernard : EN ATTENTE</div>
+  <div style="font-size:12px;color:#8a9088;margin-top:8px;">compagnon-sante — v4 — 18/09/2026 — Validé par Bernard : EN ATTENTE</div>
 </div>
 
 <script>
@@ -519,7 +526,7 @@ function openPanel(id){
   setTimeout(()=>panel.scrollIntoView({behavior:'smooth',block:'start'}),100);
   if(id==='fiches') renderFiches();
   if(id==='ig'){renderIG();}
-  if(id==='recettes'){ fermerDetailRecette(); renderRecettes(); }
+  if(id==='recettes'){ fermerDetailRecette(); recSousCatActive = 'Toutes'; renderRecettes(); }
 }
 
 // ── IMC ──
@@ -742,6 +749,7 @@ function toggleFiche(id){
 var RECETTES_FULL = [];
 var recettesChargees = false;
 var recCatActive = 'Toutes';
+var recSousCatActive = 'Toutes';
 
 fetch('/api/recettes', {cache:'no-store'})
   .then(function(r){
@@ -781,42 +789,86 @@ function escapeHtmlRec(s){
 
 function setRecCat(cat){
   recCatActive = cat;
+  recSousCatActive = 'Toutes';
   renderRecettes();
 }
+
+function setRecSousCat(sc){
+  recSousCatActive = sc;
+  renderRecettes();
+}
+
+var RECETTES_CATEGORIES_BASE = ['Petits Déjeuners','Entrées','Accompagnements','Plats','Desserts'];
 
 function renderRecettes(){
   var contListe = document.getElementById('rec-liste');
   var contCats = document.getElementById('rec-cats');
+  var contSousCats = document.getElementById('rec-souscats');
   if(!contListe) return;
 
   if(!recettesChargees){
     contListe.innerHTML = '<div style="padding:16px;text-align:center;color:#aaa;font-size:15px;">Chargement des recettes…</div>';
     if(contCats){ contCats.innerHTML = ''; }
+    if(contSousCats){ contSousCats.innerHTML = ''; }
     return;
   }
 
   var q = (document.getElementById('rec-search')||{value:''}).value.toLowerCase().trim();
-  var categories = ['Toutes','Petits Déjeuners','Entrées','Accompagnements','Plats','Desserts'];
   var base = q ? RECETTES_FULL.filter(function(r){ return (r.titre||'').toLowerCase().indexOf(q) >= 0; }) : RECETTES_FULL;
 
+  // Rubriques : les 5 de base + toute nouvelle rubrique créée dans recettes-igbas,
+  // sans qu'il soit nécessaire de toucher à ce fichier quand Bernard/Marie-Laure
+  // en ajoutent une (ex. "Encas").
+  var categoriesUtilisees = [];
+  RECETTES_FULL.forEach(function(r){ if(r.categorie && categoriesUtilisees.indexOf(r.categorie) === -1){ categoriesUtilisees.push(r.categorie); } });
+  var toutesCategories = RECETTES_CATEGORIES_BASE.slice();
+  categoriesUtilisees.forEach(function(c){ if(toutesCategories.indexOf(c) === -1){ toutesCategories.push(c); } });
+
   if(contCats){
-    contCats.innerHTML = categories.map(function(c){
-      var n = c === 'Toutes' ? base.length : base.filter(function(r){ return r.categorie === c; }).length;
-      return '<button class="rec-cat-btn' + (c===recCatActive?' active':'') + '" onclick="setRecCat(\'' + c.replace(/'/g,"\\'") + '\')">' + c + ' (' + n + ')</button>';
-    }).join('');
+    var htmlCats = '<button class="rec-cat-btn' + (recCatActive==='Toutes'?' active':'') + '" onclick="setRecCat(\'Toutes\')">Toutes (' + base.length + ')</button>';
+    toutesCategories.forEach(function(c){
+      var n = base.filter(function(r){ return r.categorie === c; }).length;
+      htmlCats += '<button class="rec-cat-btn' + (c===recCatActive?' active':'') + '" onclick="setRecCat(\'' + c.replace(/'/g,"\\'") + '\')">' + escapeHtmlRec(c) + ' (' + n + ')</button>';
+    });
+    contCats.innerHTML = htmlCats;
   }
 
-  var liste = base
-    .filter(function(r){ return recCatActive === 'Toutes' || r.categorie === recCatActive; })
-    .slice()
-    .sort(function(a,b){ return (a.titre||'').localeCompare(b.titre||'', 'fr'); });
+  var listeCat = recCatActive === 'Toutes' ? base : base.filter(function(r){ return r.categorie === recCatActive; });
 
-  if(!liste.length){
+  // Sous-rubriques : affichées seulement quand une rubrique précise est choisie
+  // et qu'elle contient au moins 2 sous-rubriques différentes parmi les recettes
+  // affichées (même logique que le catalogue de recettes-igbas).
+  var sousCatsPresentes = [];
+  listeCat.forEach(function(r){ if(r.sousCategorie && sousCatsPresentes.indexOf(r.sousCategorie) === -1){ sousCatsPresentes.push(r.sousCategorie); } });
+  var sansSousCat = listeCat.filter(function(r){ return !r.sousCategorie; });
+
+  var listeAffichee;
+  if(recCatActive !== 'Toutes' && sousCatsPresentes.length >= 2){
+    if(recSousCatActive === 'Toutes' || (sousCatsPresentes.indexOf(recSousCatActive) === -1 && recSousCatActive !== '__autres__')){
+      recSousCatActive = sousCatsPresentes[0];
+    }
+    var htmlSousCats = sousCatsPresentes.map(function(sc){
+      var n = listeCat.filter(function(r){ return r.sousCategorie === sc; }).length;
+      return '<button class="rec-cat-btn' + (sc===recSousCatActive?' active':'') + '" onclick="setRecSousCat(\'' + sc.replace(/'/g,"\\'") + '\')">' + escapeHtmlRec(sc) + ' (' + n + ')</button>';
+    }).join('');
+    if(sansSousCat.length){
+      htmlSousCats += '<button class="rec-cat-btn' + (recSousCatActive==='__autres__'?' active':'') + '" onclick="setRecSousCat(\'__autres__\')">Autres (' + sansSousCat.length + ')</button>';
+    }
+    if(contSousCats){ contSousCats.innerHTML = htmlSousCats; }
+    listeAffichee = recSousCatActive === '__autres__' ? sansSousCat : listeCat.filter(function(r){ return r.sousCategorie === recSousCatActive; });
+  }else{
+    if(contSousCats){ contSousCats.innerHTML = ''; }
+    listeAffichee = listeCat;
+  }
+
+  listeAffichee = listeAffichee.slice().sort(function(a,b){ return (a.titre||'').localeCompare(b.titre||'', 'fr'); });
+
+  if(!listeAffichee.length){
     contListe.innerHTML = '<div style="padding:16px;text-align:center;color:#aaa;font-size:15px;">Aucune recette trouv\u00e9e.</div>';
     return;
   }
 
-  contListe.innerHTML = liste.map(function(r){
+  contListe.innerHTML = listeAffichee.map(function(r){
     var ig = igMoyenRecette(r.ingredients);
     return '<div class="rec-card" onclick="ouvrirDetailRecette(\'' + r.id + '\')">'
       + '<div class="rec-card-titre">' + escapeHtmlRec(r.titre) + '</div>'
