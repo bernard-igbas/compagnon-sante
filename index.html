@@ -906,6 +906,8 @@ function ouvrirDetailRecette(id){
   document.getElementById('rec-detail-contenu').innerHTML = html;
   document.getElementById('rec-vue-liste').style.display = 'none';
   document.getElementById('rec-vue-detail').style.display = 'block';
+  // Remonte en haut de la fiche, pour que la photo soit visible dès l'ouverture.
+  window.scrollTo({ top: 0, behavior: 'auto' });
 }
 
 function fermerDetailRecette(){
