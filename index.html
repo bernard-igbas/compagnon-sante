@@ -3,7 +3,7 @@
 <head>
 <!--
   Bien-être & Liberté© — Compagnon Santé
-  v6 — 23/09/2026 — Validé par Bernard
+  v6.2 — 23/09/2026 — Validé par Bernard
   Cumule (avant migration GitHub du 05/09, une seule étiquette "v1" avait
   regroupé tout ce qui suit, ce qui prêtait à confusion avec une v1.2 restée
   en mémoire — clarifié ici avec un historique complet et une seule version
@@ -46,9 +46,16 @@
       mail de bienvenue déjà en place) et débloque immédiatement les deux
       panneaux ensemble, mémorisé sur l'appareil. Nécessite brevo-inscription.js
       v1.0 et la variable Cloudflare BREVO_API_KEY
-  Fichiers precedents : v1.2.0 (02/09/2026), v1.3.0 (03/09/2026), v1 GitHub (05/09/2026), v2 (17/09/2026), v3 (18/09/2026), v4 (18/09/2026), v5 (19/09/2026)
+    - v6.1 (23/09/2026) : le formulaire est RETIRÉ du panneau Recettes — l'entrée
+      dans Compagnon lui-même coûte déjà un e-mail (bulletin), le redemander pour
+      les recettes revenait à le demander deux fois pour la même chose. Les
+      recettes redeviennent visibles directement. Le formulaire est conservé sur
+      le panneau IG, qui n'est disponible nulle part ailleurs
+    - v6.2 (23/09/2026) : CORRECTIF — le pied de page affichait encore "v5 —
+      19/09/2026" au lieu du numéro réel, oubli lors du passage en v6
+  Fichiers precedents : v1.2.0 (02/09/2026), v1.3.0 (03/09/2026), v1 GitHub (05/09/2026), v2 (17/09/2026), v3 (18/09/2026), v4 (18/09/2026), v5 (19/09/2026), v6 (23/09/2026), v6.1 (23/09/2026)
 -->
-<meta name="app-version" content="v6-2026-09-23">
+<meta name="app-version" content="v6.2-2026-09-23">
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -494,15 +501,6 @@ input:focus,select:focus{outline:none;border-color:var(--teal);}
       <div class="cp-card recettes">
         <h3>📖 Recettes</h3>
         <div class="cp-sub">Toutes les recettes IG Bas de Marie-Laure &mdash; la m&ecirc;me base que le site, mise &agrave; jour en direct.</div>
-        <div class="cp-gate" id="recettes-gate">
-          <div class="cp-gate-icone">📖</div>
-          <p>Indique ton pr&eacute;nom et ton e-mail pour d&eacute;couvrir toutes les recettes.</p>
-          <input type="text" id="recettes-gate-prenom" placeholder="Ton pr&eacute;nom">
-          <input type="email" id="recettes-gate-email" placeholder="Ton e-mail">
-          <button id="recettes-gate-bouton" onclick="validerAccesGate('recettes')">D&eacute;couvrir</button>
-          <div class="cp-gate-msg" id="recettes-gate-msg"></div>
-        </div>
-        <div id="recettes-contenu" style="display:none;">
         <div id="rec-vue-liste">
           <input class="rec-search" type="text" id="rec-search" placeholder="🔍 Rechercher une recette..." oninput="renderRecettes()">
           <div class="rec-cats" id="rec-cats"></div>
@@ -512,7 +510,6 @@ input:focus,select:focus{outline:none;border-color:var(--teal);}
         <div id="rec-vue-detail" style="display:none;">
           <button class="rec-detail-back" onclick="fermerDetailRecette()">← Retour aux recettes</button>
           <div id="rec-detail-contenu"></div>
-        </div>
         </div>
       </div>
     </div>
@@ -545,7 +542,7 @@ input:focus,select:focus{outline:none;border-color:var(--teal);}
   <a href="https://quiz-igbas.pages.dev">Quiz gratuit</a> &nbsp;&middot;&nbsp;
   <a href="https://igbas-clients.pages.dev">Espace Client</a>
   <div class="footer-legal">M&eacute;thode 3+1 &agrave; IGBas&reg; &mdash; Bien-&ecirc;tre &amp; Libert&eacute;&copy; &mdash; v1.3.0 &mdash; 03/09/2026</div>
-  <div style="font-size:12px;color:#8a9088;margin-top:8px;">compagnon-sante — v5 — 19/09/2026 — Validé par Bernard : EN ATTENTE</div>
+  <div style="font-size:12px;color:var(--text2);margin-top:8px;">compagnon-sante — v6.2 — 23/09/2026 — Validé par Bernard : EN ATTENTE</div>
 </div>
 
 <script>
@@ -988,14 +985,12 @@ async function validerAccesGate(prefixe){
     if(!rep.ok) throw new Error('HTTP ' + rep.status);
     try{ localStorage.setItem('igbas_acces_ok', 'true'); }catch(e){}
     appliquerGate('ig');
-    appliquerGate('recettes');
   }catch(e){
     msg.textContent = "Une erreur s'est produite, réessaie dans un instant.";
     bouton.disabled = false; bouton.textContent = 'Découvrir';
   }
 }
 appliquerGate('ig');
-appliquerGate('recettes');
 </script>
 </body>
 </html>
