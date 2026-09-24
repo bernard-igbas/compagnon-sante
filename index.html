@@ -3,7 +3,7 @@
 <head>
 <!--
   Bien-être & Liberté© — Compagnon Santé
-  v5 — 19/09/2026 — Validé par Bernard
+  v6 — 23/09/2026 — Validé par Bernard
   Cumule (avant migration GitHub du 05/09, une seule étiquette "v1" avait
   regroupé tout ce qui suit, ce qui prêtait à confusion avec une v1.2 restée
   en mémoire — clarifié ici avec un historique complet et une seule version
@@ -40,9 +40,15 @@
       directement dans le code de la page (au lieu d'un fichier séparé
       Mains_BLeu_v2_0_20.png, resté introuvable malgré un premier essai
       d'upload) — plus aucun fichier externe à gérer pour l'afficher
-  Fichiers precedents : v1.2.0 (02/09/2026), v1.3.0 (03/09/2026), v1 GitHub (05/09/2026), v2 (17/09/2026), v3 (18/09/2026), v4 (18/09/2026)
+    - v6 (23/09/2026) : ACCÈS RECETTES & IG conditionné à un prénom + e-mail.
+      Un petit formulaire (dans la charte de l'appli) apparaît à l'ouverture de
+      ces deux panneaux ; le remplir inscrit le contact chez Brevo (déclenche le
+      mail de bienvenue déjà en place) et débloque immédiatement les deux
+      panneaux ensemble, mémorisé sur l'appareil. Nécessite brevo-inscription.js
+      v1.0 et la variable Cloudflare BREVO_API_KEY
+  Fichiers precedents : v1.2.0 (02/09/2026), v1.3.0 (03/09/2026), v1 GitHub (05/09/2026), v2 (17/09/2026), v3 (18/09/2026), v4 (18/09/2026), v5 (19/09/2026)
 -->
-<meta name="app-version" content="v5-2026-09-19">
+<meta name="app-version" content="v6-2026-09-23">
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -270,6 +276,15 @@ input:focus,select:focus{outline:none;border-color:var(--teal);}
   .tuiles-grid{grid-template-columns:1fr;}
   .hero-btns{flex-direction:column;align-items:center;}
 }
+.cp-gate{background:var(--teal-light);border-radius:var(--radius);padding:22px 20px;margin-top:6px;text-align:center;}
+.cp-gate .cp-gate-icone{font-size:34px;margin-bottom:6px;}
+.cp-gate p{margin:0 0 16px;color:var(--text2);font-size:16px;line-height:1.5;}
+.cp-gate input{width:100%;box-sizing:border-box;padding:12px 16px;margin-bottom:10px;border:2px solid var(--gris2);border-radius:12px;font-size:17px;font-family:'Outfit',sans-serif;color:var(--text);background:#fff;transition:border-color 0.15s;}
+.cp-gate input:focus{outline:none;border-color:var(--teal);}
+.cp-gate button{width:100%;border:none;border-radius:12px;padding:14px;font-size:18px;font-weight:700;font-family:'Outfit',sans-serif;cursor:pointer;background:var(--teal);color:#fff;transition:background 0.2s;margin-top:2px;}
+.cp-gate button:hover{background:var(--vert);}
+.cp-gate button:disabled{opacity:.6;cursor:wait;}
+.cp-gate .cp-gate-msg{margin-top:10px;color:var(--rouge);font-size:14px;min-height:1.2em;}
 </style>
 </head>
 <body>
@@ -381,6 +396,15 @@ input:focus,select:focus{outline:none;border-color:var(--teal);}
           <p>L'alternance des repas <strong>Glucido-Prot&eacute;in&eacute;s (GP)</strong> et <strong>Prot&eacute;ino-Lipidiques (PL)</strong> influe sur l'usage de certains aliments &agrave; IG limite &mdash; plut&ocirc;t le midi que le soir, ou l'inverse. C'est le r&ocirc;le de Marie-Laure de vous guider sur ce point selon votre profil.</p>
         </div>
 
+        <div class="cp-gate" id="ig-gate">
+          <div class="cp-gate-icone">🍽️</div>
+          <p>Indique ton pr&eacute;nom et ton e-mail pour d&eacute;couvrir l'index glyc&eacute;mique de tous les aliments.</p>
+          <input type="text" id="ig-gate-prenom" placeholder="Ton pr&eacute;nom">
+          <input type="email" id="ig-gate-email" placeholder="Ton e-mail">
+          <button id="ig-gate-bouton" onclick="validerAccesGate('ig')">D&eacute;couvrir</button>
+          <div class="cp-gate-msg" id="ig-gate-msg"></div>
+        </div>
+        <div id="ig-contenu" style="display:none;">
         <div class="cp-sub">Choisissez un aliment pour conna&icirc;tre son IG et l'impact r&eacute;el sur votre glyc&eacute;mie selon la portion.</div>
         <input class="ig-search" type="text" id="ig-search" placeholder="🔍 Rechercher un aliment..." oninput="renderIG()">
         <div class="ig-filtres">
@@ -398,6 +422,7 @@ input:focus,select:focus{outline:none;border-color:var(--teal);}
           <div class="res-val" id="rv-ig"></div>
           <div class="res-lbl" id="rl-ig"></div>
           <div class="res-msg" id="rm-ig"></div>
+        </div>
         </div>
       </div>
     </div>
@@ -469,6 +494,15 @@ input:focus,select:focus{outline:none;border-color:var(--teal);}
       <div class="cp-card recettes">
         <h3>📖 Recettes</h3>
         <div class="cp-sub">Toutes les recettes IG Bas de Marie-Laure &mdash; la m&ecirc;me base que le site, mise &agrave; jour en direct.</div>
+        <div class="cp-gate" id="recettes-gate">
+          <div class="cp-gate-icone">📖</div>
+          <p>Indique ton pr&eacute;nom et ton e-mail pour d&eacute;couvrir toutes les recettes.</p>
+          <input type="text" id="recettes-gate-prenom" placeholder="Ton pr&eacute;nom">
+          <input type="email" id="recettes-gate-email" placeholder="Ton e-mail">
+          <button id="recettes-gate-bouton" onclick="validerAccesGate('recettes')">D&eacute;couvrir</button>
+          <div class="cp-gate-msg" id="recettes-gate-msg"></div>
+        </div>
+        <div id="recettes-contenu" style="display:none;">
         <div id="rec-vue-liste">
           <input class="rec-search" type="text" id="rec-search" placeholder="🔍 Rechercher une recette..." oninput="renderRecettes()">
           <div class="rec-cats" id="rec-cats"></div>
@@ -478,6 +512,7 @@ input:focus,select:focus{outline:none;border-color:var(--teal);}
         <div id="rec-vue-detail" style="display:none;">
           <button class="rec-detail-back" onclick="fermerDetailRecette()">← Retour aux recettes</button>
           <div id="rec-detail-contenu"></div>
+        </div>
         </div>
       </div>
     </div>
@@ -510,7 +545,7 @@ input:focus,select:focus{outline:none;border-color:var(--teal);}
   <a href="https://quiz-igbas.pages.dev">Quiz gratuit</a> &nbsp;&middot;&nbsp;
   <a href="https://igbas-clients.pages.dev">Espace Client</a>
   <div class="footer-legal">M&eacute;thode 3+1 &agrave; IGBas&reg; &mdash; Bien-&ecirc;tre &amp; Libert&eacute;&copy; &mdash; v1.3.0 &mdash; 03/09/2026</div>
-  <div style="font-size:12px;color:#8a9088;margin-top:8px;">compagnon-sante — v5 — 19/09/2026 — Validé par Bernard </div>
+  <div style="font-size:12px;color:#8a9088;margin-top:8px;">compagnon-sante — v5 — 19/09/2026 — Validé par Bernard : EN ATTENTE</div>
 </div>
 
 <script>
@@ -918,6 +953,49 @@ function fermerDetailRecette(){
   if(vd){ vd.style.display = 'none'; }
   if(vl){ vl.style.display = 'block'; }
 }
+
+// v2 (23/09/2026) — Accès aux recettes et à l'IG réservé à un prénom + e-mail
+// (déclenche automatiquement le mail de bienvenue déjà en place chez Brevo).
+// Un seul formulaire rempli débloque les deux, mémorisé sur cet appareil.
+function accesGateOk(){
+  try{ return localStorage.getItem('igbas_acces_ok') === 'true'; }catch(e){ return false; }
+}
+function appliquerGate(prefixe){
+  var gate = document.getElementById(prefixe+'-gate');
+  var contenu = document.getElementById(prefixe+'-contenu');
+  var ok = accesGateOk();
+  if(gate) gate.style.display = ok ? 'none' : 'block';
+  if(contenu) contenu.style.display = ok ? 'block' : 'none';
+}
+function emailValideGate(email){
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+async function validerAccesGate(prefixe){
+  var prenom = document.getElementById(prefixe+'-gate-prenom').value.trim();
+  var email = document.getElementById(prefixe+'-gate-email').value.trim();
+  var msg = document.getElementById(prefixe+'-gate-msg');
+  var bouton = document.getElementById(prefixe+'-gate-bouton');
+  msg.textContent = '';
+  if(!prenom || !email){ msg.textContent = 'Merci de renseigner ton prénom et ton e-mail.'; return; }
+  if(!emailValideGate(email)){ msg.textContent = "Cette adresse e-mail ne semble pas valide."; return; }
+  bouton.disabled = true; bouton.textContent = 'Un instant…';
+  try{
+    var rep = await fetch('/api/brevo-inscription', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({prenom: prenom, email: email})
+    });
+    if(!rep.ok) throw new Error('HTTP ' + rep.status);
+    try{ localStorage.setItem('igbas_acces_ok', 'true'); }catch(e){}
+    appliquerGate('ig');
+    appliquerGate('recettes');
+  }catch(e){
+    msg.textContent = "Une erreur s'est produite, réessaie dans un instant.";
+    bouton.disabled = false; bouton.textContent = 'Découvrir';
+  }
+}
+appliquerGate('ig');
+appliquerGate('recettes');
 </script>
 </body>
 </html>
