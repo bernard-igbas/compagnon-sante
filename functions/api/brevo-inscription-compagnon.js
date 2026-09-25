@@ -1,5 +1,5 @@
 // ============================================================
-// compagnon-sante (brevo-inscription-compagnon.js) — v1.0 — 23/09/2026 — Validé par Bernard : EN ATTENTE
+// compagnon-sante (brevo-inscription-compagnon.js) — v1.1 — 25/09/2026 — Validé par Bernard : EN ATTENTE
 // ------------------------------------------------------------
 // CHANGELOG
 //  v1.0 (23/09/2026) : nouveau fichier. Reçoit un prénom et un e-mail depuis le
@@ -8,6 +8,10 @@
 //    déclenche l'automation n°4 (mail de bienvenue avec le lien de l'appli).
 //    Distinct de brevo-inscription.js (liste 7, recettes/IG) : bulletin
 //    différent, liste différente, même mécanique.
+//  v1.1 (25/09/2026) : DIAGNOSTIC — ajout d'une réponse à une simple visite
+//    (GET), pour vérifier facilement que ce fichier est bien pris en compte
+//    par Cloudflare, et un message d'erreur qui dit précisément ce qui a
+//    échoué au lieu d'un message générique.
 // ============================================================
 // functions/api/brevo-inscription-compagnon.js
 // Route : /api/brevo-inscription-compagnon
@@ -18,6 +22,16 @@
 //    brevo-inscription.js — la même clé sert pour les deux fichiers)
 
 const ID_LISTE_BREVO = 8; // "Abonnés Compagnon"
+
+// v1.1 — simple visite (GET) : confirme que ce fichier est bien en ligne,
+// et si la variable BREVO_API_KEY est bien déclarée (sans jamais l'afficher).
+export async function onRequestGet(context) {
+  return reponseJson({
+    ok: true,
+    fichier: "brevo-inscription-compagnon.js v1.1",
+    cle_brevo_presente: !!context.env.BREVO_API_KEY
+  });
+}
 
 function reponseJson(objet, statut) {
   return new Response(JSON.stringify(objet), {
