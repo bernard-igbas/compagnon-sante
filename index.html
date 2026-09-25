@@ -3,7 +3,7 @@
 <head>
 <!--
   Bien-être & Liberté© — Compagnon Santé
-  v6.2 — 23/09/2026 — Validé par Bernard
+  v6.3 — 23/09/2026 — Validé par Bernard
   Cumule (avant migration GitHub du 05/09, une seule étiquette "v1" avait
   regroupé tout ce qui suit, ce qui prêtait à confusion avec une v1.2 restée
   en mémoire — clarifié ici avec un historique complet et une seule version
@@ -53,9 +53,13 @@
       le panneau IG, qui n'est disponible nulle part ailleurs
     - v6.2 (23/09/2026) : CORRECTIF — le pied de page affichait encore "v5 —
       19/09/2026" au lieu du numéro réel, oubli lors du passage en v6
-  Fichiers precedents : v1.2.0 (02/09/2026), v1.3.0 (03/09/2026), v1 GitHub (05/09/2026), v2 (17/09/2026), v3 (18/09/2026), v4 (18/09/2026), v5 (19/09/2026), v6 (23/09/2026), v6.1 (23/09/2026)
+    - v6.3 (23/09/2026) : le formulaire est aussi RETIRÉ du panneau IG, même
+      raison que pour les recettes en v6.1 (l'entrée dans Compagnon coûte déjà
+      un e-mail via le nouveau bulletin). Le code du formulaire (gate) reste en
+      place mais n'est plus utilisé par aucun panneau pour l'instant
+  Fichiers precedents : v1.2.0 (02/09/2026), v1.3.0 (03/09/2026), v1 GitHub (05/09/2026), v2 (17/09/2026), v3 (18/09/2026), v4 (18/09/2026), v5 (19/09/2026), v6 (23/09/2026), v6.1 (23/09/2026), v6.2 (23/09/2026)
 -->
-<meta name="app-version" content="v6.2-2026-09-23">
+<meta name="app-version" content="v6.3-2026-09-23">
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -403,15 +407,6 @@ input:focus,select:focus{outline:none;border-color:var(--teal);}
           <p>L'alternance des repas <strong>Glucido-Prot&eacute;in&eacute;s (GP)</strong> et <strong>Prot&eacute;ino-Lipidiques (PL)</strong> influe sur l'usage de certains aliments &agrave; IG limite &mdash; plut&ocirc;t le midi que le soir, ou l'inverse. C'est le r&ocirc;le de Marie-Laure de vous guider sur ce point selon votre profil.</p>
         </div>
 
-        <div class="cp-gate" id="ig-gate">
-          <div class="cp-gate-icone">🍽️</div>
-          <p>Indique ton pr&eacute;nom et ton e-mail pour d&eacute;couvrir l'index glyc&eacute;mique de tous les aliments.</p>
-          <input type="text" id="ig-gate-prenom" placeholder="Ton pr&eacute;nom">
-          <input type="email" id="ig-gate-email" placeholder="Ton e-mail">
-          <button id="ig-gate-bouton" onclick="validerAccesGate('ig')">D&eacute;couvrir</button>
-          <div class="cp-gate-msg" id="ig-gate-msg"></div>
-        </div>
-        <div id="ig-contenu" style="display:none;">
         <div class="cp-sub">Choisissez un aliment pour conna&icirc;tre son IG et l'impact r&eacute;el sur votre glyc&eacute;mie selon la portion.</div>
         <input class="ig-search" type="text" id="ig-search" placeholder="🔍 Rechercher un aliment..." oninput="renderIG()">
         <div class="ig-filtres">
@@ -429,7 +424,6 @@ input:focus,select:focus{outline:none;border-color:var(--teal);}
           <div class="res-val" id="rv-ig"></div>
           <div class="res-lbl" id="rl-ig"></div>
           <div class="res-msg" id="rm-ig"></div>
-        </div>
         </div>
       </div>
     </div>
@@ -542,7 +536,7 @@ input:focus,select:focus{outline:none;border-color:var(--teal);}
   <a href="https://quiz-igbas.pages.dev">Quiz gratuit</a> &nbsp;&middot;&nbsp;
   <a href="https://igbas-clients.pages.dev">Espace Client</a>
   <div class="footer-legal">M&eacute;thode 3+1 &agrave; IGBas&reg; &mdash; Bien-&ecirc;tre &amp; Libert&eacute;&copy; &mdash; v1.3.0 &mdash; 03/09/2026</div>
-  <div style="font-size:12px;color:var(--text2);margin-top:8px;">compagnon-sante — v6.2 — 23/09/2026 — Validé par Bernard : EN ATTENTE</div>
+  <div style="font-size:12px;color:var(--text2);margin-top:8px;">compagnon-sante — v6.3 — 23/09/2026 — Validé par Bernard : EN ATTENTE</div>
 </div>
 
 <script>
@@ -984,13 +978,11 @@ async function validerAccesGate(prefixe){
     });
     if(!rep.ok) throw new Error('HTTP ' + rep.status);
     try{ localStorage.setItem('igbas_acces_ok', 'true'); }catch(e){}
-    appliquerGate('ig');
-  }catch(e){
+      }catch(e){
     msg.textContent = "Une erreur s'est produite, réessaie dans un instant.";
     bouton.disabled = false; bouton.textContent = 'Découvrir';
   }
 }
-appliquerGate('ig');
 </script>
 </body>
 </html>
