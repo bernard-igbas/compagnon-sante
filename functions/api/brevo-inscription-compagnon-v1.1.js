@@ -95,4 +95,4 @@ export async function onRequestPost(context) {
   } catch (e) {
     return reponseJson({ error: "Impossible de contacter Brevo pour le moment" }, 502);
   }
-}
+}     
