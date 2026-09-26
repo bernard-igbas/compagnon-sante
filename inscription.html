@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <!--
-  compagnon-sante (inscription.html) — v1.0 — 23/09/2026 — Validé par Bernard : EN ATTENTE
+  compagnon-sante (inscription.html) — v1.1 — 26/09/2026 — Validé par Bernard : EN ATTENTE
   CHANGELOG
    v1.0 (23/09/2026) : nouveau fichier. Remplace le formulaire Brevo natif
    (sibforms.com, non stylé) vers lequel pointait le lien Bitly. Même charte
@@ -12,6 +12,11 @@
    Pour la mettre en service : déposer ce fichier sur le même projet Cloudflare
    que compagnon-sante, puis changer la destination du lien Bitly existant
    pour qu'elle pointe vers cette page au lieu de l'ancien lien sibforms.com.
+
+   v1.1 (26/09/2026) : DIAGNOSTIC — affiche temporairement le détail exact de
+   l'erreur renvoyée par le serveur (au lieu du message générique), le temps de
+   comprendre pourquoi l'inscription échoue malgré la clé Brevo maintenant en
+   place. À remettre en v1.0 une fois le problème trouvé.
 -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -128,11 +133,16 @@ async function envoyerInscription(){
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({prenom: prenom, email: email, optin: optin})
     });
-    if(!rep.ok) throw new Error('HTTP ' + rep.status);
+    var texteReponse = await rep.text();
+    if(!rep.ok){
+      msg.textContent = "⚠ Détail (temporaire) : HTTP " + rep.status + " — " + texteReponse;
+      bouton.disabled = false; bouton.textContent = 'Recevoir mon accès gratuit';
+      return;
+    }
     document.getElementById('formZone').style.display = 'none';
     document.getElementById('merciZone').style.display = 'block';
   }catch(e){
-    msg.textContent = "Une erreur s'est produite, réessaie dans un instant.";
+    msg.textContent = "⚠ Détail (temporaire) : " + (e && e.message ? e.message : e);
     bouton.disabled = false; bouton.textContent = 'Recevoir mon accès gratuit';
   }
 }
