@@ -1,5 +1,5 @@
 // ============================================================
-// compagnon-sante (brevo-inscription-compagnon.js) — v1.1 — 25/09/2026 — Validé par Bernard : EN ATTENTE
+// compagnon-sante (brevo-inscription-compagnon.js) — v1.1 — 26/09/2026 — Validé par Bernard : EN ATTENTE
 // ------------------------------------------------------------
 // CHANGELOG
 //  v1.0 (23/09/2026) : nouveau fichier. Reçoit un prénom et un e-mail depuis le
