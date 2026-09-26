@@ -2,7 +2,7 @@
 // compagnon-sante (brevo-inscription-compagnon.js) — v1.1 — 25/09/2026 — Validé par Bernard : EN ATTENTE
 // ------------------------------------------------------------
 // CHANGELOG
-//  v1.0 (23/09/2026) : nouveau fichier. Reçoit un prénom et un e-mail depuis le
+//  v1.0 (23/09/2026) : nouveau fichier.  Reçoit un prénom et un e-mail depuis le
 //    bulletin d'inscription à Compagnon Santé (inscription.html), inscrit le
 //    contact chez Brevo dans la liste id 8 ("Abonnés Compagnon"), ce qui
 //    déclenche l'automation n°4 (mail de bienvenue avec le lien de l'appli).
