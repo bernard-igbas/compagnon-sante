@@ -3,7 +3,13 @@
 <head>
 <!--
   Bien-être & Liberté© — Compagnon Santé
-  v6.3 — 23/09/2026 — Validé par Bernard : EN ATTENTE
+  compagnon-sante — v7 — 29/09/2026 — Validé par Bernard : EN ATTENTE
+    - v7 (29/09/2026) : ESPACE CLIENT INTÉGRÉ. Les boutons "Espace Client" ouvrent désormais l'espace
+      client DANS le Compagnon (plus de renvoi vers une autre appli). Le code personnel est vérifié par la
+      base (functions/api/espace.js) ; le contenu réservé n'est envoyé par le serveur qu'après vérification
+      (il n'est plus lisible dans le code de la page). Le suivi du client est enregistré dans la base.
+      Prérequis Cloudflare : liaison KV CLIENTS_KV sur ce projet.
+    - Précédent : v6.3 — 23/09/2026 (validation restée EN ATTENTE)
   Cumule (avant migration GitHub du 05/09, une seule étiquette "v1" avait
   regroupé tout ce qui suit, ce qui prêtait à confusion avec une v1.2 restée
   en mémoire — clarifié ici avec un historique complet et une seule version
@@ -59,7 +65,7 @@
       place mais n'est plus utilisé par aucun panneau pour l'instant
   Fichiers precedents : v1.2.0 (02/09/2026), v1.3.0 (03/09/2026), v1 GitHub (05/09/2026), v2 (17/09/2026), v3 (18/09/2026), v4 (18/09/2026), v5 (19/09/2026), v6 (23/09/2026), v6.1 (23/09/2026), v6.2 (23/09/2026)
 -->
-<meta name="app-version" content="v6.3-2026-09-23">
+<meta name="app-version" content="v7-2026-09-29">
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -316,7 +322,7 @@ input:focus,select:focus{outline:none;border-color:var(--teal);}
     <div class="hero-badge">🎁 100&nbsp;% gratuit &mdash; Toujours</div>
     <div class="hero-btns">
       <a class="btn-hero primary" href="#compagnon">D&eacute;couvrir le Compagnon Sant&eacute;</a>
-      <a class="btn-hero secondary" href="https://clients-igbas.pages.dev" target="_blank">Espace Client →</a>
+      <a class="btn-hero secondary" href="#" onclick="ecOuvrir(event)">Espace Client →</a>
     </div>
   </div>
 </div>
@@ -517,7 +523,7 @@ input:focus,select:focus{outline:none;border-color:var(--teal);}
   <p>Ces outils vous donnent les cl&eacute;fs de lecture.<br>La M&eacute;thode 3+1 &agrave; IGBas&reg; vous donne les cl&eacute;fs d'action &mdash; avec Marie-Laure &agrave; vos c&ocirc;t&eacute;s.</p>
   <div class="cta-btns">
     <a class="cta-btn quiz" href="https://quiz-igbas.pages.dev" target="_blank">Quiz profil gratuit →</a>
-    <a class="cta-btn methode" href="https://clients-igbas.pages.dev" target="_blank">Espace Client IGBas&reg; →</a>
+    <a class="cta-btn methode" href="#" onclick="ecOuvrir(event)">Espace Client IGBas&reg; →</a>
   </div>
 </div>
 
@@ -534,9 +540,9 @@ input:focus,select:focus{outline:none;border-color:var(--teal);}
   <div class="footer-brand"><span class="bleu">Bien-&ecirc;tre</span> &amp; <span class="vert">Libert&eacute;&copy;</span></div>
   <a href="https://methode-igbas.fr">methode-igbas.fr</a> &nbsp;&middot;&nbsp;
   <a href="https://quiz-igbas.pages.dev">Quiz gratuit</a> &nbsp;&middot;&nbsp;
-  <a href="https://clients-igbas.pages.dev">Espace Client</a>
+  <a href="#" onclick="ecOuvrir(event)">Espace Client</a>
   <div class="footer-legal">M&eacute;thode 3+1 &agrave; IGBas&reg; &mdash; Bien-&ecirc;tre &amp; Libert&eacute;&copy; &mdash; v1.3.0 &mdash; 03/09/2026</div>
-  <div style="font-size:12px;color:var(--text2);margin-top:8px;">compagnon-sante — v6.3 — 23/09/2026 — Validé par Bernard</div>
+  <div style="font-size:14px;color:var(--text2);margin-top:8px;">compagnon-sante — v7 — 29/09/2026</div>
 </div>
 
 <script>
@@ -983,6 +989,40 @@ async function validerAccesGate(prefixe){
     bouton.disabled = false; bouton.textContent = 'Découvrir';
   }
 }
+</script>
+<!-- ===== v7 : Espace client (contenu réservé envoyé par le serveur après vérification du code) ===== -->
+<div id="ec" style="display:none;position:fixed;inset:0;z-index:9998;background:#1A3A5C;font-family:'Outfit',sans-serif">
+<div id="ec-login" style="min-height:100%;display:flex;align-items:center;justify-content:center;padding:20px"><div style="background:#fff;border-radius:22px;padding:34px 28px;max-width:440px;width:100%;text-align:center">
+<h2 style="font-size:30px;color:#1A3A5C;margin-bottom:8px">Espace client</h2>
+<p style="font-size:20px;color:#5a6370;margin-bottom:18px;line-height:1.5">Saisissez votre code d'accès personnel</p>
+<input id="ec-code" type="text" autocomplete="off" autocapitalize="characters" placeholder="Votre code" style="width:100%;font-size:26px;padding:14px;border:2px solid #c5d3e0;border-radius:14px;text-align:center;margin-bottom:16px;font-family:inherit">
+<button id="ec-ok" style="width:100%;background:#1D9E75;color:#fff;border:none;border-radius:30px;padding:16px;font-size:22px;font-weight:700;cursor:pointer;font-family:inherit">Entrer</button>
+<div id="ec-msg" style="display:none;color:#c0392b;font-size:20px;font-weight:600;margin-top:16px;line-height:1.4"></div>
+<button id="ec-retour" style="margin-top:20px;background:none;border:none;color:#1A3A5C;font-size:20px;text-decoration:underline;cursor:pointer;font-family:inherit">← Retour au Compagnon</button></div></div>
+<iframe id="ec-frame" title="Espace client" style="display:none;position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff"></iframe>
+<button id="ec-quit" style="display:none;position:absolute;top:10px;right:10px;z-index:2;background:#1A3A5C;color:#fff;border:2px solid #fff;border-radius:24px;padding:8px 18px;font-size:18px;font-weight:700;cursor:pointer;font-family:inherit">✕ Fermer</button>
+</div>
+<script>
+(function(){
+var E=function(i){return document.getElementById(i)};
+function vue(l){E('ec-login').style.display=l?'flex':'none';E('ec-frame').style.display=l?'none':'block';E('ec-quit').style.display=l?'none':'block'}
+function msg(t){E('ec-msg').textContent=t;E('ec-msg').style.display=t?'block':'none'}
+function acces(code){
+ msg('');E('ec-ok').textContent='Vérification…';
+ fetch('/api/espace',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'ouvrir',code:code})})
+ .then(function(r){return r.json().then(function(j){return{s:r.status,j:j}})})
+ .then(function(x){E('ec-ok').textContent='Entrer';
+  if(x.s===200&&x.j.html){try{localStorage.setItem('igbas_ec',code)}catch(e){}E('ec-frame').srcdoc=x.j.html;vue(false)}
+  else{if(x.s===401)try{localStorage.removeItem('igbas_ec')}catch(e){}
+   msg(x.s===401?'Code incorrect ou accès terminé. Vérifiez votre code.':x.s===429?"Trop d'essais. Réessayez dans 15 minutes.":'Service indisponible. Réessayez plus tard.');vue(true)}})
+ .catch(function(){E('ec-ok').textContent='Entrer';msg('Connexion impossible. Vérifiez votre connexion internet.');vue(true)});
+}
+window.ecOuvrir=function(ev){if(ev)ev.preventDefault();E('ec').style.display='block';var c=null;try{c=localStorage.getItem('igbas_ec')}catch(e){}if(c&&!E('ec-frame').srcdoc){vue(true);acces(c)}else if(!E('ec-frame').srcdoc)vue(true)};
+E('ec-ok').onclick=function(){var c=E('ec-code').value.trim();if(c)acces(c)};
+E('ec-code').addEventListener('keydown',function(e){if(e.key==='Enter')E('ec-ok').click()});
+E('ec-retour').onclick=E('ec-quit').onclick=function(){E('ec').style.display='none'};
+window.addEventListener('message',function(e){if(e.source===E('ec-frame').contentWindow&&e.data==='deconnexion'){try{localStorage.removeItem('igbas_ec')}catch(x){}E('ec-frame').srcdoc='';E('ec-code').value='';vue(true)}});
+})();
 </script>
 </body>
 </html>
