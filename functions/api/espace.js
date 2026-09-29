@@ -1,6 +1,6 @@
 // functions/api/espace.js — compagnon-sante — v7 — 29/09/2026 — Validé par Bernard : EN ATTENTE
 // Espace client : vérifie le code dans CLIENTS_KV, puis envoie le contenu réservé et lit/écrit le suivi du client.
-import { ESPACE_HTML } from '../_espace.js';
+import { ESPACE_HTML } from './_espace.js';
 const CLES = ['igbas_j2', 'igbas_journal2', 'igbas_rdv_day'];
 export async function onRequestPost({ request, env }) {
   const rep = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
