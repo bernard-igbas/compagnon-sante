@@ -1,5 +1,6 @@
-// functions/api/espace.js — compagnon-sante — v7.2 — 29/09/2026 — Validé par Bernard : EN ATTENTE
+// functions/api/espace.js — compagnon-sante — v7.4 — 30/09/2026 — Validé par Bernard : EN ATTENTE
 // Espace client : vérifie le code dans CLIENTS_KV, envoie le contenu réservé, lit/écrit le suivi et les menus du client.
+// v7.4 : signaux — todo:<id> (menu à corriger, côté Marie-Laure) et igbas_menu_vu (correction vue, côté cliente).
 // v7.2 : page « Mes menus » (menu:<id>:<semaine> = menus du client ; menuval:<id>:<semaine> = correction de Marie-Laure).
 import { ESPACE_HTML, MENU_HTML } from './_espace.js';
 const CLES = ['igbas_j2', 'igbas_journal2', 'igbas_rdv_day', 'igbas_suivi_v3_data', 'igbas_suivi_v3_profile'];
@@ -27,7 +28,7 @@ export async function onRequestPost({ request, env }) {
       if (typeof b.valeur !== 'string' || b.valeur.length > 100000) return rep({ erreur: 'taille' }, 400);
       d[b.cle] = b.valeur;
       if (b.cle === 'igbas_suivi_v3_data') { // historique : une entrée par semaine, lisible par Marie-Laure
-        try { const m = JSON.parse(b.valeur); if (SEM.test(m.semDebut || '')) await kv.put('menu:' + c.id + ':' + m.semDebut, b.valeur); } catch (e) {}
+        try { const m = JSON.parse(b.valeur); if (SEM.test(m.semDebut || '')) { await kv.put('menu:' + c.id + ':' + m.semDebut, b.valeur); const plein = Object.values(m.jours || {}).some((j) => Object.values((j && j.repas) || {}).some((r) => r && String(r.txt || '').trim())); if (plein) await kv.put('todo:' + c.id, JSON.stringify({ sem: m.semDebut, date: new Date().toISOString() })); } } catch (e) {}
       }
     }
     await kv.put(cle, JSON.stringify(d));
@@ -35,7 +36,10 @@ export async function onRequestPost({ request, env }) {
   }
   if (b.action === 'ouvrir') {
     d.igbas_access = 'ok_client';
-    return rep({ ok: true, prenom: c.prenom || '', html: ESPACE_HTML.replace('__INIT__', () => init({ code, d })) });
+    let s0 = ''; try { s0 = JSON.parse(d.igbas_suivi_v3_data || '{}').semDebut || ''; } catch (e) {}
+    const v0 = SEM.test(s0) ? await kv.get('menuval:' + c.id + ':' + s0, 'json') : null;
+    const alerte = !!(v0 && v0.date && v0.date !== d.igbas_menu_vu);
+    return rep({ ok: true, prenom: c.prenom || '', html: ESPACE_HTML.replace('__INIT__', () => init({ code, d, alerte })) });
   }
   if (b.action === 'menu') {
     const f = (await kv.get('fiche:' + c.id, 'json')) || {};
@@ -45,6 +49,7 @@ export async function onRequestPost({ request, env }) {
     }
     let sem = ''; try { sem = JSON.parse(d.igbas_suivi_v3_data || '{}').semDebut || ''; } catch (e) {}
     const val = SEM.test(sem) ? await kv.get('menuval:' + c.id + ':' + sem, 'json') : null;
+    if (val && val.date && val.date !== d.igbas_menu_vu) { d.igbas_menu_vu = val.date; await kv.put(cle, JSON.stringify(d)); } // correction vue : le signal s'éteint
     return rep({ ok: true, html: MENU_HTML.replace('__INIT__', () => init({ code, d, val })) });
   }
   return rep({ ok: true, prenom: c.prenom || '' });
