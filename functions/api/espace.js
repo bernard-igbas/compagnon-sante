@@ -1,6 +1,6 @@
-// functions/api/espace.js — compagnon-sante — v7.4 — 30/09/2026 — Validé par Bernard : EN ATTENTE
+// functions/api/espace.js — compagnon-sante — v7.6 — 01/10/2026 — Validé par Bernard : EN ATTENTE
 // Espace client : vérifie le code dans CLIENTS_KV, envoie le contenu réservé, lit/écrit le suivi et les menus du client.
-// v7.4 : signaux — todo:<id> (menu à corriger, côté Marie-Laure) et igbas_menu_vu (correction vue, côté cliente).
+// v7.6 : action « docs » (liste des documents de la formule de la cliente, lien valable 1 h). v7.4 : signaux — todo:<id> (menu à corriger, côté Marie-Laure) et igbas_menu_vu (correction vue, côté cliente).
 // v7.2 : page « Mes menus » (menu:<id>:<semaine> = menus du client ; menuval:<id>:<semaine> = correction de Marie-Laure).
 import { ESPACE_HTML, MENU_HTML } from './_espace.js';
 const CLES = ['igbas_j2', 'igbas_journal2', 'igbas_rdv_day', 'igbas_suivi_v3_data', 'igbas_suivi_v3_profile'];
@@ -40,6 +40,15 @@ export async function onRequestPost({ request, env }) {
     const v0 = SEM.test(s0) ? await kv.get('menuval:' + c.id + ':' + s0, 'json') : null;
     const alerte = !!(v0 && v0.date && v0.date !== d.igbas_menu_vu);
     return rep({ ok: true, prenom: c.prenom || '', html: ESPACE_HTML.replace('__INIT__', () => init({ code, d, alerte })) });
+  }
+  if (b.action === 'docs') {
+    const f = (await kv.get('fiche:' + c.id, 'json')) || {};
+    const fid = (f.champs || {})['#gest-formule'] || '';
+    const form = ((await kv.get('formules', 'json')) || []).find((o) => o.id === fid);
+    const mine = ((await kv.get('docs:index', 'json')) || []).filter((x) => (x.formules || []).includes(fid)).sort((a, b2) => (a.ordre || 0) - (b2.ordre || 0));
+    let t = '';
+    if (mine.length) { t = crypto.randomUUID().replace(/-/g, ''); await kv.put('dt:' + t, JSON.stringify({ id: c.id }), { expirationTtl: 3600 }); }
+    return rep({ ok: true, formule: form ? form.nom : '', docs: mine.map((x) => ({ titre: x.titre, url: '/api/doc?t=' + t + '&d=' + x.id })) });
   }
   if (b.action === 'menu') {
     const f = (await kv.get('fiche:' + c.id, 'json')) || {};
