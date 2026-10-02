@@ -1,5 +1,6 @@
-// functions/api/espace.js — compagnon-sante — v7.6 — 01/10/2026 — Validé par Bernard : EN ATTENTE
+// functions/api/espace.js — compagnon-sante — v7.7 — 01/10/2026 — Validé par Bernard : EN ATTENTE
 // Espace client : vérifie le code dans CLIENTS_KV, envoie le contenu réservé, lit/écrit le suivi et les menus du client.
+// v7.7 : « nouveauxDocs » = documents de la formule ajoutés ou mis à jour depuis la dernière ouverture de Mes documents (igbas_docs_vu).
 // v7.6 : action « docs » (liste des documents de la formule de la cliente, lien valable 1 h). v7.4 : signaux — todo:<id> (menu à corriger, côté Marie-Laure) et igbas_menu_vu (correction vue, côté cliente).
 // v7.2 : page « Mes menus » (menu:<id>:<semaine> = menus du client ; menuval:<id>:<semaine> = correction de Marie-Laure).
 import { ESPACE_HTML, MENU_HTML } from './_espace.js';
@@ -39,7 +40,10 @@ export async function onRequestPost({ request, env }) {
     let s0 = ''; try { s0 = JSON.parse(d.igbas_suivi_v3_data || '{}').semDebut || ''; } catch (e) {}
     const v0 = SEM.test(s0) ? await kv.get('menuval:' + c.id + ':' + s0, 'json') : null;
     const alerte = !!(v0 && v0.date && v0.date !== d.igbas_menu_vu);
-    return rep({ ok: true, prenom: c.prenom || '', html: ESPACE_HTML.replace('__INIT__', () => init({ code, d, alerte })) });
+    const f0 = (await kv.get('fiche:' + c.id, 'json')) || {};
+    const fid0 = (f0.champs || {})['#gest-formule'] || '';
+    const nouveauxDocs = ((await kv.get('docs:index', 'json')) || []).filter((x) => (x.formules || []).includes(fid0) && (!d.igbas_docs_vu || (x.maj || '') > d.igbas_docs_vu)).length;
+    return rep({ ok: true, prenom: c.prenom || '', html: ESPACE_HTML.replace('__INIT__', () => init({ code, d, alerte, nouveauxDocs })) });
   }
   if (b.action === 'docs') {
     const f = (await kv.get('fiche:' + c.id, 'json')) || {};
@@ -48,6 +52,7 @@ export async function onRequestPost({ request, env }) {
     const mine = ((await kv.get('docs:index', 'json')) || []).filter((x) => (x.formules || []).includes(fid)).sort((a, b2) => (a.ordre || 0) - (b2.ordre || 0));
     let t = '';
     if (mine.length) { t = crypto.randomUUID().replace(/-/g, ''); await kv.put('dt:' + t, JSON.stringify({ id: c.id }), { expirationTtl: 3600 }); }
+    d.igbas_docs_vu = new Date().toISOString(); await kv.put(cle, JSON.stringify(d)); // documents vus : le signal s'éteint
     return rep({ ok: true, formule: form ? form.nom : '', docs: mine.map((x) => ({ titre: x.titre, url: '/api/doc?t=' + t + '&d=' + x.id })) });
   }
   if (b.action === 'menu') {
