@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <!--
-  compagnon-sante (inscription.html) — v1.3 — 12/10/2026 — Validé par Bernard : EN ATTENTE
+  compagnon-sante (inscription.html) — v1.4 — 12/10/2026 — Validé par Bernard
   CHANGELOG
    v1.0 (23/09/2026) : nouveau fichier. Remplace le formulaire Brevo natif
    (sibforms.com, non stylé) vers lequel pointait le lien Bitly. Même charte
@@ -25,10 +25,14 @@
    personne et l'envoie avec le prénom et l'e-mail. Sans code, rien ne change.
    Étiquette de version visible et discrète ajoutée en bas de page.
    À déposer avec functions/api/brevo-inscription-compagnon.js v1.3.
+
+   v1.4 (12/10/2026) : DIAGNOSTIC (à retirer ensuite) — avec …/inscription?a=CODE&diag=1,
+   la page affiche sous « C'est fait ! » la réponse du serveur (code reçu, réponse
+   de Brevo). Sans « &diag=1 », rien ne change pour le visiteur.
 -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="v1.3-2026-10-12">
+<meta name="app-version" content="v1.4-2026-10-12">
 <title>Accédez au Compagnon Santé — gratuit</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;900&display=swap" rel="stylesheet">
@@ -122,7 +126,7 @@ button:disabled{opacity:.6;cursor:wait;}
   </div>
 </div>
 
-<p style="text-align:center;font:12px Outfit,Arial,sans-serif;color:#9aa5a0;margin:14px 0 8px">compagnon-sante — inscription v1.3 — 12/10/2026</p>
+<p style="text-align:center;font:12px Outfit,Arial,sans-serif;color:#9aa5a0;margin:14px 0 8px">compagnon-sante — inscription v1.4 — 12/10/2026</p>
 
 <script>
 // v1.3 — code ambassadeur : lu dans l'adresse (?a=CODE), gardé 30 jours
@@ -158,8 +162,15 @@ async function envoyerInscription(){
       body: JSON.stringify({prenom: prenom, email: email, optin: optin, ambassadeur: CODE_AMB})
     });
     if(!rep.ok) throw new Error('HTTP ' + rep.status);
+    var rj = null; try{ rj = await rep.clone().json(); }catch(e){}
     document.getElementById('formZone').style.display = 'none';
     document.getElementById('merciZone').style.display = 'block';
+    if(/[?&]diag=1/.test(location.search) && rj){
+      var pre = document.createElement('pre');
+      pre.style.cssText = 'text-align:left;white-space:pre-wrap;font-size:13px;background:#f4f6f8;padding:10px;border-radius:8px;margin-top:12px';
+      pre.textContent = JSON.stringify(rj, null, 1);
+      document.getElementById('merciZone').appendChild(pre);
+    }
   }catch(e){
     msg.textContent = "Une erreur s'est produite, réessaie dans un instant.";
     bouton.disabled = false; bouton.textContent = 'Recevoir mon accès gratuit';
