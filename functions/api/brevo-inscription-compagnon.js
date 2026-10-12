@@ -1,5 +1,5 @@
 // ============================================================
-// compagnon-sante (brevo-inscription-compagnon.js) — v1.4 — 12/10/2026 — Validé par Bernard : EN ATTENTE
+// compagnon-sante (brevo-inscription-compagnon.js) — v1.5 — 12/10/2026 — Validé par Bernard : EN ATTENTE
 // ------------------------------------------------------------
 // CHANGELOG
 //  v1.0 (23/09/2026) : nouveau fichier. Reçoit un prénom et un e-mail depuis le
@@ -23,6 +23,12 @@
 //    fichier le crée lui-même (type texte) puis réessaie ; plus besoin de le
 //    créer à la main dans Brevo. Si la création échoue, l'inscription se fait
 //    quand même, sans le code.
+//  v1.5 (12/10/2026) : CORRECTIF. Brevo n'envoie PAS d'erreur quand on lui donne
+//    un attribut qui n'existe pas : il l'ignore en silence (constaté au test du
+//    12/10/2026, AMBASSADEUR absent de la fiche). La v1.4 attendait cette erreur
+//    pour créer l'attribut, donc ne le créait jamais. Désormais, quand un code
+//    ambassadeur est reçu, le fichier VÉRIFIE d'abord que l'attribut existe
+//    (liste des attributs de Brevo) et le crée au besoin, avant d'inscrire.
 // ============================================================
 // functions/api/brevo-inscription-compagnon.js
 // Route : /api/brevo-inscription-compagnon
@@ -60,6 +66,33 @@ async function envoyerAChezBrevo(cle, email, attributs) {
       updateEnabled: true
     })
   });
+}
+
+async function assurerAttributAmbassadeur(cle) {
+  try {
+    const liste = await fetch("https://api.brevo.com/v3/contacts/attributes", {
+      headers: { "api-key": cle, "Accept": "application/json" }
+    });
+    if (liste.status === 200) {
+      const donnees = await liste.json();
+      const existe = (donnees.attributes || []).some(function (a) {
+        return (a.name || "").toUpperCase() === "AMBASSADEUR";
+      });
+      if (existe) return true;
+    }
+    const creation = await fetch("https://api.brevo.com/v3/contacts/attributes/normal/AMBASSADEUR", {
+      method: "POST",
+      headers: {
+        "api-key": cle,
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
+      body: JSON.stringify({ type: "text" })
+    });
+    return creation.status === 201 || creation.status === 204;
+  } catch (e) {
+    return false;
+  }
 }
 
 function emailValide(email) {
@@ -110,7 +143,7 @@ export async function onRequestPost(context) {
           dejaRattache = !!(contact.attributes && contact.attributes.AMBASSADEUR);
         }
       } catch (e) { /* on continue sans cette vérification */ }
-      if (!dejaRattache) {
+      if (!dejaRattache && await assurerAttributAmbassadeur(cle)) {
         attributs.AMBASSADEUR = codeAmb;
         codeAjoute = true;
       }
