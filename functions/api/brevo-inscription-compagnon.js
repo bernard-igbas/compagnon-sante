@@ -1,5 +1,5 @@
 // ============================================================
-// compagnon-sante (brevo-inscription-compagnon.js) — v1.5 — 12/10/2026 — Validé par Bernard : EN ATTENTE
+// compagnon-sante (brevo-inscription-compagnon.js) — v1.6 — 12/10/2026 — Validé par Bernard : EN ATTENTE
 // ------------------------------------------------------------
 // CHANGELOG
 //  v1.0 (23/09/2026) : nouveau fichier. Reçoit un prénom et un e-mail depuis le
@@ -29,6 +29,12 @@
 //    pour créer l'attribut, donc ne le créait jamais. Désormais, quand un code
 //    ambassadeur est reçu, le fichier VÉRIFIE d'abord que l'attribut existe
 //    (liste des attributs de Brevo) et le crée au besoin, avant d'inscrire.
+//  v1.6 (12/10/2026) : DIAGNOSTIC (à retirer ensuite) — le test v1.5 n'a toujours
+//    pas fait apparaître AMBASSADEUR. Ajout : (1) une simple visite de
+//    /api/brevo-inscription-compagnon affiche la version du fichier en ligne, si
+//    la clé Brevo est présente, si Brevo autorise à lire les attributs (code) et
+//    si AMBASSADEUR existe ; (2) la réponse à une inscription indique si un code
+//    a été reçu et ce que Brevo a répondu. Aucun secret n'est affiché.
 // ============================================================
 // functions/api/brevo-inscription-compagnon.js
 // Route : /api/brevo-inscription-compagnon
@@ -39,6 +45,33 @@
 //    brevo-inscription.js — la même clé sert pour les deux fichiers)
 
 const ID_LISTE_BREVO = 8; // "Abonnés Compagnon"
+const VERSION_FICHIER = "brevo-inscription-compagnon.js v1.6";
+
+// v1.6 — simple visite (GET) : diagnostic en lecture seule, sans rien modifier
+export async function onRequestGet(context) {
+  const cle = context.env.BREVO_API_KEY;
+  const rep = { fichier: VERSION_FICHIER, cle_brevo_presente: !!cle };
+  if (cle) {
+    try {
+      const liste = await fetch("https://api.brevo.com/v3/contacts/attributes", {
+        headers: { "api-key": cle, "Accept": "application/json" }
+      });
+      rep.brevo_liste_attributs_statut = liste.status;
+      if (liste.status === 200) {
+        const d = await liste.json();
+        rep.attribut_ambassadeur_existe = (d.attributes || []).some(function (a) {
+          return (a.name || "").toUpperCase() === "AMBASSADEUR";
+        });
+      }
+    } catch (e) {
+      rep.erreur = "Impossible de contacter Brevo";
+    }
+  }
+  return new Response(JSON.stringify(rep), {
+    status: 200,
+    headers: { "Content-Type": "application/json" }
+  });
+}
 
 function reponseJson(objet, statut) {
   return new Response(JSON.stringify(objet), {
@@ -68,16 +101,18 @@ async function envoyerAChezBrevo(cle, email, attributs) {
   });
 }
 
-async function assurerAttributAmbassadeur(cle) {
+async function assurerAttributAmbassadeur(cle, diag) {
   try {
     const liste = await fetch("https://api.brevo.com/v3/contacts/attributes", {
       headers: { "api-key": cle, "Accept": "application/json" }
     });
+    diag.liste_statut = liste.status;
     if (liste.status === 200) {
       const donnees = await liste.json();
       const existe = (donnees.attributes || []).some(function (a) {
         return (a.name || "").toUpperCase() === "AMBASSADEUR";
       });
+      diag.attribut_existait = existe;
       if (existe) return true;
     }
     const creation = await fetch("https://api.brevo.com/v3/contacts/attributes/normal/AMBASSADEUR", {
@@ -89,8 +124,10 @@ async function assurerAttributAmbassadeur(cle) {
       },
       body: JSON.stringify({ type: "text" })
     });
+    diag.creation_statut = creation.status;
     return creation.status === 201 || creation.status === 204;
   } catch (e) {
+    diag.erreur = "appel Brevo impossible";
     return false;
   }
 }
@@ -122,6 +159,7 @@ export async function onRequestPost(context) {
   const optin = corps.optin === true;
   const codeBrut = (corps.ambassadeur || "").toString().trim().toUpperCase();
   const codeAmb = codeAmbassadeurValide(codeBrut) ? codeBrut : "";
+  const diag = { code_recu: !!codeAmb };
 
   if (!prenom) return reponseJson({ error: "Le prénom est obligatoire" }, 400);
   if (!emailValide(email)) return reponseJson({ error: "L'adresse e-mail n'est pas valide" }, 400);
@@ -143,7 +181,8 @@ export async function onRequestPost(context) {
           dejaRattache = !!(contact.attributes && contact.attributes.AMBASSADEUR);
         }
       } catch (e) { /* on continue sans cette vérification */ }
-      if (!dejaRattache && await assurerAttributAmbassadeur(cle)) {
+      diag.deja_rattache = dejaRattache;
+      if (!dejaRattache && await assurerAttributAmbassadeur(cle, diag)) {
         attributs.AMBASSADEUR = codeAmb;
         codeAjoute = true;
       }
@@ -178,7 +217,7 @@ export async function onRequestPost(context) {
     }
 
     if (reponseBrevo.status === 201 || reponseBrevo.status === 204) {
-      return reponseJson({ ok: true, ambassadeur_enregistre: codeAjoute });
+      return reponseJson({ ok: true, ambassadeur_enregistre: codeAjoute, diag: diag });
     }
 
     const detail = await reponseBrevo.text();
