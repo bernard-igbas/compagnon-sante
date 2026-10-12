@@ -1,5 +1,5 @@
 // ============================================================
-// compagnon-sante (brevo-inscription-compagnon.js) — v1.6 — 12/10/2026 — Validé par Bernard : EN ATTENTE
+// compagnon-sante (brevo-inscription-compagnon.js) — v1.7 — 12/10/2026 — Validé par Bernard
 // ------------------------------------------------------------
 // CHANGELOG
 //  v1.0 (23/09/2026) : nouveau fichier. Reçoit un prénom et un e-mail depuis le
@@ -35,6 +35,11 @@
 //    la clé Brevo est présente, si Brevo autorise à lire les attributs (code) et
 //    si AMBASSADEUR existe ; (2) la réponse à une inscription indique si un code
 //    a été reçu et ce que Brevo a répondu. Aucun secret n'est affiché.
+//  v1.7 (12/10/2026) : DIAGNOSTIC (suite, à retirer ensuite) — test v1.6 : la case
+//    AMBASSADEUR existe chez Brevo, la clé a les droits, mais le code n'arrive
+//    pas dans la fiche. Le bloc "diag" de la réponse indique maintenant le code
+//    de réponse de Brevo à chaque envoi et, en cas de refus, son message
+//    (envoi1_statut / envoi1_detail / envoi2_statut). Aucun secret affiché.
 // ============================================================
 // functions/api/brevo-inscription-compagnon.js
 // Route : /api/brevo-inscription-compagnon
@@ -45,7 +50,7 @@
 //    brevo-inscription.js — la même clé sert pour les deux fichiers)
 
 const ID_LISTE_BREVO = 8; // "Abonnés Compagnon"
-const VERSION_FICHIER = "brevo-inscription-compagnon.js v1.6";
+const VERSION_FICHIER = "brevo-inscription-compagnon.js v1.7";
 
 // v1.6 — simple visite (GET) : diagnostic en lecture seule, sans rien modifier
 export async function onRequestGet(context) {
@@ -189,6 +194,10 @@ export async function onRequestPost(context) {
     }
 
     let reponseBrevo = await envoyerAChezBrevo(cle, email, attributs);
+    diag.envoi1_statut = reponseBrevo.status;
+    if (reponseBrevo.status >= 400) {
+      try { diag.envoi1_detail = (await reponseBrevo.clone().text()).slice(0, 300); } catch (e) { /* rien */ }
+    }
 
     // L'attribut AMBASSADEUR n'existe pas encore chez Brevo : on le crée, puis on réessaie
     if (reponseBrevo.status === 400 && codeAjoute) {
