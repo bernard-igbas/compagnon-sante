@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <!--
-  compagnon-sante (inscription.html) — v1.2 — 26/09/2026 — Validé par Bernard
+  compagnon-sante (inscription.html) — v1.3 — 12/10/2026 — Validé par Bernard : EN ATTENTE
   CHANGELOG
    v1.0 (23/09/2026) : nouveau fichier. Remplace le formulaire Brevo natif
    (sibforms.com, non stylé) vers lequel pointait le lien Bitly. Même charte
@@ -19,10 +19,16 @@
    v1.2 (26/09/2026) : problème résolu et confirmé (mail bien reçu) — message
    d'erreur remis en version simple, plus rassurante pour un vrai visiteur ;
    étiquette de version corrigée (restée à "v1" au lieu de "v1.2").
+
+   v1.3 (12/10/2026) : LIENS D'AMBASSADEURS. La page lit le code personnel de
+   l'adresse (…/inscription?a=CODE), le garde 30 jours dans le navigateur de la
+   personne et l'envoie avec le prénom et l'e-mail. Sans code, rien ne change.
+   Étiquette de version visible et discrète ajoutée en bas de page.
+   À déposer avec functions/api/brevo-inscription-compagnon.js v1.3.
 -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="v1.2-2026-09-26">
+<meta name="app-version" content="v1.3-2026-10-12">
 <title>Accédez au Compagnon Santé — gratuit</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;900&display=swap" rel="stylesheet">
@@ -116,7 +122,23 @@ button:disabled{opacity:.6;cursor:wait;}
   </div>
 </div>
 
+<p style="text-align:center;font:12px Outfit,Arial,sans-serif;color:#9aa5a0;margin:14px 0 8px">compagnon-sante — inscription v1.3 — 12/10/2026</p>
+
 <script>
+// v1.3 — code ambassadeur : lu dans l'adresse (?a=CODE), gardé 30 jours
+var CODE_AMB = (function(){
+  try{
+    var p = new URLSearchParams(location.search).get('a');
+    if(p && /^[A-Za-z0-9-]{3,24}$/.test(p)){
+      var c = p.toUpperCase();
+      localStorage.setItem('ig_amb', JSON.stringify({c:c, t:Date.now()}));
+      return c;
+    }
+    var s = JSON.parse(localStorage.getItem('ig_amb') || 'null');
+    if(s && s.c && (Date.now() - s.t) < 30*24*3600*1000) return s.c;
+  }catch(e){}
+  return '';
+})();
 function emailValide(email){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); }
 async function envoyerInscription(){
   var prenom = document.getElementById('prenom').value.trim();
@@ -133,7 +155,7 @@ async function envoyerInscription(){
     var rep = await fetch('/api/brevo-inscription-compagnon', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({prenom: prenom, email: email, optin: optin})
+      body: JSON.stringify({prenom: prenom, email: email, optin: optin, ambassadeur: CODE_AMB})
     });
     if(!rep.ok) throw new Error('HTTP ' + rep.status);
     document.getElementById('formZone').style.display = 'none';
