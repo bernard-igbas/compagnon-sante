@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <!--
-  compagnon-sante (inscription.html) — v1.5 — 12/10/2026 — Validé par Bernard : EN ATTENTE
+  compagnon-sante (inscription.html) — v1.6 — 15/10/2026 — Validé par Bernard : OUI
   CHANGELOG
    v1.0 (23/09/2026) : nouveau fichier. Remplace le formulaire Brevo natif
    (sibforms.com, non stylé) vers lequel pointait le lien Bitly. Même charte
@@ -29,10 +29,12 @@
    v1.4 (12/10/2026) : DIAGNOSTIC temporaire (…&diag=1 affichait la réponse du
    serveur). Test réel réussi (TEST-003).
    v1.5 (12/10/2026) : le diagnostic est retiré ; fonctionnement identique à la v1.3.
+   v1.6 (15/10/2026) : VOUVOIEMENT partout (« Votre prénom », « Votre e-mail », page « C'est fait ! »,
+   messages d'erreur) pour s'accorder avec le mail de bienvenue ; fonctionnement identique à la v1.5.
 -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="v1.5-2026-10-12">
+<meta name="app-version" content="v1.6-2026-10-15">
 <title>Accédez au Compagnon Santé — gratuit</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;900&display=swap" rel="stylesheet">
@@ -97,10 +99,10 @@ button:disabled{opacity:.6;cursor:wait;}
       <h1>Accédez au Compagnon Santé<br>— gratuit</h1>
       <p class="accroche">Le couteau suisse de votre santé : <b>IMC, index glycémique, gestion du stress</b> et bien plus — directement sur votre mobile.</p>
 
-      <label for="prenom">Ton prénom</label>
+      <label for="prenom">Votre prénom</label>
       <input type="text" id="prenom" placeholder="Prénom" autocomplete="given-name">
 
-      <label for="email">Ton e-mail</label>
+      <label for="email">Votre e-mail</label>
       <input type="email" id="email" placeholder="E-mail" autocomplete="email">
 
       <div class="opt-row">
@@ -121,12 +123,12 @@ button:disabled{opacity:.6;cursor:wait;}
     <div class="merci" id="merciZone">
       <div class="emoji">✅</div>
       <h2>C'est fait !</h2>
-      <p>Regarde ta boîte mail : ton accès au Compagnon Santé vient de partir.<br>Pense à vérifier tes spams si tu ne le vois pas d'ici quelques minutes.</p>
+      <p>Regardez votre boîte mail : votre accès au Compagnon Santé vient de partir.<br>Pensez à vérifier vos spams si vous ne le voyez pas d'ici quelques minutes.</p>
     </div>
   </div>
 </div>
 
-<p style="text-align:center;font:12px Outfit,Arial,sans-serif;color:#9aa5a0;margin:14px 0 8px">compagnon-sante — inscription v1.5 — 12/10/2026</p>
+<p style="text-align:center;font:12px Outfit,Arial,sans-serif;color:#9aa5a0;margin:14px 0 8px">compagnon-sante — inscription v1.6 — 15/10/2026</p>
 
 <script>
 // v1.3 — code ambassadeur : lu dans l'adresse (?a=CODE), gardé 30 jours
@@ -151,7 +153,7 @@ async function envoyerInscription(){
   var msg = document.getElementById('msg');
   var bouton = document.getElementById('bouton');
   msg.textContent = '';
-  if(!prenom || !email){ msg.textContent = 'Merci de renseigner ton prénom et ton e-mail.'; return; }
+  if(!prenom || !email){ msg.textContent = 'Merci de renseigner votre prénom et votre e-mail.'; return; }
   if(!emailValide(email)){ msg.textContent = "Cette adresse e-mail ne semble pas valide."; return; }
   if(!optin){ msg.textContent = "Merci de cocher la case pour continuer."; return; }
   bouton.disabled = true; bouton.textContent = 'Un instant…';
@@ -165,7 +167,7 @@ async function envoyerInscription(){
     document.getElementById('formZone').style.display = 'none';
     document.getElementById('merciZone').style.display = 'block';
   }catch(e){
-    msg.textContent = "Une erreur s'est produite, réessaie dans un instant.";
+    msg.textContent = "Une erreur s'est produite, réessayez dans un instant.";
     bouton.disabled = false; bouton.textContent = 'Recevoir mon accès gratuit';
   }
 }
